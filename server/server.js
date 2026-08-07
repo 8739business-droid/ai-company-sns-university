@@ -35,6 +35,17 @@ app.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
   try { payload = JSON.parse(rawBody); } catch { return; }
   for (const ev of payload.events || []) {
     try {
+      // グループ・複数人トークには応答しない（push配信の宛先としてのみ使う）。
+      // 招待直後（join）に一度だけトークIDを返す＝push宛先の設定に使うため
+      const srcType = ev.source?.type;
+      if (srcType === "group" || srcType === "room") {
+        const talkId = ev.source.groupId || ev.source.roomId || "不明";
+        if (ev.type === "join") {
+          console.log("LINE group join:", srcType, talkId);
+          await replyText(ev.replyToken, "招待ありがとうございます🤖\nこのトークのID（push配信の宛先設定用）:\n" + talkId);
+        }
+        continue;
+      }
       if (ev.type !== "message" || ev.message?.type !== "text") continue;
       const userId = ev.source?.userId;
       const text = ev.message.text;
@@ -183,7 +194,7 @@ try {
 // エディタ保存は「別ファイルに書いてリネーム」のことがあるため、ファイルでなくフォルダを監視する
 let sseNotifyTimer = null;
 try {
-  watch(join(KIT_ROOT, "office"), (_event, filename) => {
+  const officeWatcher = watch(join(KIT_ROOT, "office"), (_event, filename) => {
     if (filename !== "state.js") return;
     clearTimeout(sseNotifyTimer);
     sseNotifyTimer = setTimeout(() => {
@@ -201,6 +212,10 @@ try {
       try { copyFileSync(STATE_FILE, STATE_BACKUP); } catch {}
       for (const c of sseClients) { try { c.write("data: update\n\n"); } catch {} }
     }, 120);
+  });
+  // watch は非同期でも error イベントを出すことがあり、拾わないとプロセスごと落ちる
+  officeWatcher.on("error", (e) => {
+    console.error("office フォルダの監視でエラーが発生しました（ライブ更新は無効化されます）:", e.message);
   });
 } catch (e) { console.error("state.js の監視を開始できませんでした:", e.message); }
 
