@@ -1,0 +1,12 @@
+{
+  "name": "SNS大学",
+  "slogan": "発信で、お店とブランドにファンを増やす。",
+  "ceo": { "name": "Masahiro", "title": "代表取締役 CEO" },
+  "secretary": { "name": "アイ", "role": "秘書（全体の段取り役）" },
+  "employees": [
+    { "name": "ミク", "role": "SNSプランナー" },
+    { "name": "ソラ", "role": "コピーライター" },
+    { "name": "アヤ", "role": "ビジュアル担当" },
+    { "name": "ケン", "role": "分析・改善担当" }
+  ]
+}
